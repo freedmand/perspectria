@@ -52,8 +52,12 @@ document.addEventListener("selectionchange", function() {
   const range = selection.getRangeAt(0);
   console.log(selection);
 
-  // Set the text and collapse a cloned range.
+  // Set the text.
   text = range.toString();
+  // Skip if the selection has no meaningful text.
+  if (text.trim() == '') return;
+
+  // Create a new range and collapse to the end of it.
   const newRange = range.cloneRange();
   newRange.collapse(false);
 
