@@ -1,11 +1,3 @@
-console.log('Hello!');
-
-chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
-  if (request.method == "getSelection") {
-    console.log(window.getSelection().toString());
-  }
-});
-
 let currentNode = null;
 let text = null;
 
@@ -49,31 +41,30 @@ document.addEventListener("selectionchange", function() {
     return;
   }
 
-  const range = selection.getRangeAt(0);
-  console.log(selection);
-
+  const range = selection.getRangeAt(0).cloneRange();
   // Set the text.
   text = range.toString();
   // Skip if the selection has no meaningful text.
   if (text.trim() == '') return;
 
-  // Create a new range and collapse to the end of it.
-  const newRange = range.cloneRange();
-  newRange.collapse(false);
+  const parentElement = range.commonAncestorContainer;
+  let el = parentElement;
+  while (el && el.contentEditable != 'true') {
+    el = el.parentElement;
+  }
+  if (el != null) return; // inside a content-editable; abort.
 
-  const testNode = document.createElement('span');
-  testNode.style.visibility = 'hidden';
-  newRange.insertNode(testNode);
-  const rect = testNode.getBoundingClientRect();
+
+
+  // Get the bounding box of the range and the HTML element.
+  const rect = range.getBoundingClientRect();
   const htmlRect = document.documentElement.getBoundingClientRect();
-  console.log(rect.top, rect.right, rect.bottom, rect.left);
-  testNode.parentNode.removeChild(testNode);
 
   // Create new selection node.
   currentNode = document.createElement('img');
   currentNode.src = chrome.extension.getURL('icons/perspectria_markup.png');
   currentNode.className = '_perspectria_markup';
-  currentNode.style.left = `${rect.left - htmlRect.left}px`;
+  currentNode.style.left = `${rect.right - htmlRect.left}px`;
   currentNode.style.top = `${rect.top - htmlRect.top}px`;
   currentNode.style.pointerEvents = 'none';
   currentNode.addEventListener('click', comment);
